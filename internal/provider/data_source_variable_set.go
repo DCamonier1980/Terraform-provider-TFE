@@ -1,6 +1,11 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
 
+// NOTE: This is a legacy resource and should be migrated to the Plugin
+// Framework if substantial modifications are planned. See
+// docs/new-resources.md if planning to use this code as boilerplate for
+// a new resource.
+
 package provider
 
 import (
@@ -31,6 +36,11 @@ func dataSourceTFEVariableSet() *schema.Resource {
 			},
 
 			"global": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
+
+			"priority": {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
@@ -88,6 +98,7 @@ func dataSourceTFEVariableSetRead(d *schema.ResourceData, meta interface{}) erro
 				d.Set("name", vs.Name)
 				d.Set("description", vs.Description)
 				d.Set("global", vs.Global)
+				d.Set("priority", vs.Priority)
 
 				// Only now include vars and workspaces to cut down on request load.
 				readOptions := tfe.VariableSetReadOptions{

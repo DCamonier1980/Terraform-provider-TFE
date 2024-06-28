@@ -57,7 +57,7 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 		vcsRepo: &workspaceVcsRepo{
 			branch: jsii.String("main"),
 			identifier: jsii.String("my-org-name/vcs-repository"),
-			oauthTokenId: cdktf.Token_AsString(tfeOauthClientTest.oauthTokenId),
+			oauthTokenId: cdktf.*token_AsString(tfeOauthClientTest.oauthTokenId),
 		},
 	})
 	tfeWorkspaceParent := workspace.NewWorkspace(this, jsii.String("parent"), &workspaceConfig{
@@ -67,7 +67,7 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 		vcsRepo: &workspaceVcsRepo{
 			branch: jsii.String("main"),
 			identifier: jsii.String("my-org-name/vcs-repository"),
-			oauthTokenId: cdktf.Token_*AsString(tfeOauthClientTest.oauthTokenId),
+			oauthTokenId: cdktf.*token_*AsString(tfeOauthClientTest.oauthTokenId),
 		},
 	})
 	tfeWorkspaceRunWsRunParent := workspaceRun.NewWorkspaceRun(this, jsii.String("ws_run_parent"), &workspaceRunConfig{
@@ -83,7 +83,7 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 			retryBackoffMin: jsii.Number(10),
 			waitForRun: jsii.Boolean(true),
 		},
-		workspaceId: cdktf.Token_*AsString(tfeWorkspaceParent.id),
+		workspaceId: cdktf.*token_*AsString(tfeWorkspaceParent.id),
 	})
 	workspaceRun.NewWorkspaceRun(this, jsii.String("ws_run_child"), &workspaceRunConfig{
 		apply: &workspaceRunApply{
@@ -100,7 +100,7 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 			retryBackoffMin: jsii.Number(10),
 			waitForRun: jsii.Boolean(true),
 		},
-		workspaceId: cdktf.Token_*AsString(tfeWorkspaceChild.id),
+		workspaceId: cdktf.*token_*AsString(tfeWorkspaceChild.id),
 	})
 	return this
 }
@@ -142,7 +142,7 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 		vcsRepo: &workspaceVcsRepo{
 			branch: jsii.String("main"),
 			identifier: jsii.String("my-org-name/vcs-repository"),
-			oauthTokenId: cdktf.Token_AsString(tfeOauthClientTest.oauthTokenId),
+			oauthTokenId: cdktf.*token_AsString(tfeOauthClientTest.oauthTokenId),
 		},
 	})
 	workspaceRun.NewWorkspaceRun(this, jsii.String("ws_run_parent"), &workspaceRunConfig{
@@ -153,7 +153,7 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 			manualConfirm: jsii.Boolean(true),
 			waitForRun: jsii.Boolean(true),
 		},
-		workspaceId: cdktf.Token_*AsString(tfeWorkspaceParent.id),
+		workspaceId: cdktf.*token_*AsString(tfeWorkspaceParent.id),
 	})
 	return this
 }
@@ -195,7 +195,7 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 		vcsRepo: &workspaceVcsRepo{
 			branch: jsii.String("main"),
 			identifier: jsii.String("my-org-name/vcs-repository"),
-			oauthTokenId: cdktf.Token_AsString(tfeOauthClientTest.oauthTokenId),
+			oauthTokenId: cdktf.*token_AsString(tfeOauthClientTest.oauthTokenId),
 		},
 	})
 	workspaceRun.NewWorkspaceRun(this, jsii.String("ws_run_parent"), &workspaceRunConfig{
@@ -208,7 +208,7 @@ func newMyConvertedCode(scope construct, name *string) *myConvertedCode {
 			retry: jsii.Boolean(false),
 			waitForRun: jsii.Boolean(true),
 		},
-		workspaceId: cdktf.Token_*AsString(tfeWorkspaceParent.id),
+		workspaceId: cdktf.*token_*AsString(tfeWorkspaceParent.id),
 	})
 	return this
 }
@@ -224,8 +224,8 @@ The following arguments are supported:
 
 Both `Apply` and `Destroy` block supports:
 
-* `ManualConfirm` - (Required) If set to true a human will have to manually confirm a plan in Terraform Cloud's UI to start an apply. If set to false, this resource will be automatically applied. Defaults to `False`.
-  * If `WaitForRun` is set to `False`, this auto-apply will be done by Terraform Cloud.
+* `ManualConfirm` - (Required) If set to true a human will have to manually confirm a plan in HCP Terraform's UI to start an apply. If set to false, this resource will be automatically applied. Defaults to `False`.
+  * If `WaitForRun` is set to `False`, this auto-apply will be done by HCP Terraform.
   * If `WaitForRun` is set to `True`, the apply will be confirmed by the provider. The exception is the case of policy check soft-failed where a human has to perform an override by manually confirming the plan even though `ManualConfirm` is set to false.
   * Note that this setting will override the workspace's default apply mode. To use the workspace default apply mode, look up the setting for `AutoApply` with the `TfeWorkspace` data source.
 * `Retry` - (Optional) Whether or not to retry on plan or apply errors. When set to true, `RetryAttempts` must also be greater than zero inorder for retries to happen. Defaults to `True`.
@@ -238,5 +238,5 @@ Both `Apply` and `Destroy` block supports:
 
 In addition to all arguments above, the following attributes are exported:
 
-* `Id` - The ID of the run created by this resource. Note, if the resource was created without an `Apply{}` configuration block, then this ID will not refer to a real run in Terraform Cloud.
-<!-- cache-key: cdktf-0.17.0-pre.15 input-041419f518c0405e85227f2933aa7402414ae5b4f96725d448d521ecc7a24518 -->
+* `Id` - The ID of the run created by this resource. Note, if the resource was created without an `Apply{}` configuration block, then this ID will not refer to a real run in HCP Terraform.
+<!-- cache-key: cdktf-0.17.0-pre.15 input-ef1d4e75ac0c6d99c8a7fe481ebea7451bae3648d17da23e434d8dfb5749ce2b -->

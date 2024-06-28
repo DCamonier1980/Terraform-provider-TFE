@@ -1,6 +1,11 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
 
+// NOTE: This is a legacy resource and should be migrated to the Plugin
+// Framework if substantial modifications are planned. See
+// docs/new-resources.md if planning to use this code as boilerplate for
+// a new resource.
+
 package provider
 
 import (
@@ -39,6 +44,21 @@ func dataSourceTFEWorkspace() *schema.Resource {
 
 			"auto_apply": {
 				Type:     schema.TypeBool,
+				Computed: true,
+			},
+
+			"auto_apply_run_trigger": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
+
+			"auto_destroy_at": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+
+			"auto_destroy_activity_duration": {
+				Type:     schema.TypeString,
 				Computed: true,
 			},
 
@@ -223,11 +243,27 @@ func dataSourceTFEWorkspaceRead(d *schema.ResourceData, meta interface{}) error 
 	// Update the config.
 	d.Set("allow_destroy_plan", workspace.AllowDestroyPlan)
 	d.Set("auto_apply", workspace.AutoApply)
+	d.Set("auto_apply_run_trigger", workspace.AutoApplyRunTrigger)
 	d.Set("description", workspace.Description)
 	d.Set("assessments_enabled", workspace.AssessmentsEnabled)
 	d.Set("file_triggers_enabled", workspace.FileTriggersEnabled)
 	d.Set("operations", workspace.Operations)
 	d.Set("policy_check_failures", workspace.PolicyCheckFailures)
+
+	autoDestroyAt, err := flattenAutoDestroyAt(workspace.AutoDestroyAt)
+	if err != nil {
+		return fmt.Errorf("Error flattening auto destroy during read: %w", err)
+	}
+	d.Set("auto_destroy_at", autoDestroyAt)
+
+	var autoDestroyDuration string
+	if workspace.AutoDestroyActivityDuration.IsSpecified() {
+		autoDestroyDuration, err = workspace.AutoDestroyActivityDuration.Get()
+		if err != nil {
+			return fmt.Errorf("Error reading auto destroy activity duration: %w", err)
+		}
+	}
+	d.Set("auto_destroy_activity_duration", autoDestroyDuration)
 
 	// If target tfe instance predates projects, then workspace.Project will be nil
 	if workspace.Project != nil {

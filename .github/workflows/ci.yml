@@ -13,7 +13,7 @@ jobs:
     name: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - uses: ./.github/actions/lint-provider-tfe
 
   tests:
@@ -29,13 +29,13 @@ jobs:
     steps:
       - name: Fetch Outputs
         id: tflocal
-        uses: hashicorp-forge/terraform-cloud-action/outputs@4adbe7eea886138ac10a4c09e63c5c568aaa6672 # main
+        uses: hashicorp-forge/terraform-cloud-action/outputs@5583d5f554d268ac91b3c37fd0a5e9da2c78c017 # v1.1.0
         with:
           token: "${{ secrets.TF_WORKFLOW_TFLOCAL_CLOUD_TFC_TOKEN }}"
           organization: hashicorp-v2
           workspace: tflocal-terraform-provider-tfe
 
-      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
       - uses: ./.github/actions/test-provider-tfe
         with:
@@ -51,18 +51,23 @@ jobs:
           admin_subscription_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.subscription }}
           admin_support_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.support }}
           admin_version_maintenance_token: ${{ fromJSON(steps.tflocal.outputs.workspace-outputs-json).tfe_admin_token_by_role.version-maintenance }}
+          # Run terminal cmd 'go help testflag' to learn more about -list flag
+          # action.yml uses https://github.com/hashicorp-forge/go-test-split-action/blob/main/action.yml to split acceptance tests
+          # which runs against all tests using the list arg
+          # lists_tests regex is used to skip the TestAccTFESAMLSettings_omnibus test suite for CI tests only
+          list_tests: "[^(TestAccTFESAMLSettings_omnibus)]"
 
   tests-combine-summaries:
     name: Combine Test Reports
     needs: [ tests ]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-node@5e21ff4d9bc1a8cf6de233a3057d20ec6b3fb69d # v3.8.1
+      - uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
         with:
-          node-version: 16
+          node-version: 20
 
       - name: Download artifacts
-        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
 
       - name: Install junit-report-merger
         run: npm install -g junit-report-merger
@@ -71,7 +76,7 @@ jobs:
         run: jrm ./ci-summary-provider.xml "junit-test-summary-0/*.xml" "junit-test-summary-1/*.xml" "junit-test-summary-2/*.xml" "junit-test-summary-3/*.xml" "junit-test-summary-4/*.xml"
 
       - name: Upload test artifacts
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         with:
           name: junit-test-summary
           path: ./ci-summary-provider.xml

@@ -7,7 +7,7 @@ description: |-
 
 # tfe_registry_module
 
-Terraform Cloud's private module registry helps you share Terraform modules across your organization.
+HCP Terraform's private module registry helps you share Terraform modules across your organization.
 
 ## Example Usage
 
@@ -32,6 +32,36 @@ resource "tfe_registry_module" "test-registry-module" {
     display_identifier = "my-org-name/terraform-provider-name"
     identifier         = "my-org-name/terraform-provider-name"
     oauth_token_id     = tfe_oauth_client.test-oauth-client.oauth_token_id
+  }
+}
+```
+
+Create private registry module with tests enabled:
+
+```hcl
+resource "tfe_organization" "test-organization" {
+  name  = "my-org-name"
+  email = "admin@company.com"
+}
+
+resource "tfe_oauth_client" "test-oauth-client" {
+  organization     = tfe_organization.test-organization.name
+  api_url          = "https://api.github.com"
+  http_url         = "https://github.com"
+  oauth_token      = "my-vcs-provider-token"
+  service_provider = "github"
+}
+
+resource "tfe_registry_module" "test-registry-module" {
+  test_config {
+    tests_enabled = true
+  }
+
+  vcs_repo {
+    display_identifier = "my-org-name/terraform-provider-name"
+    identifier         = "my-org-name/terraform-provider-name"
+    oauth_token_id     = tfe_oauth_client.test-oauth-client.oauth_token_id
+    branch             = "main"
   }
 }
 ```
@@ -124,17 +154,23 @@ The following arguments are supported:
 * `organization` - (Optional) The name of the organization associated with the registry module. It must be set if `module_provider` is used, or if `vcs_repo` is used via a GitHub App.
 * `namespace` - (Optional) The namespace of a public registry module. It can be used if `module_provider` is set and `registry_name` is public.
 * `registry_name` - (Optional) Whether the registry module is private or public. It can be used if `module_provider` is set.
+* `initial_version` - (Optional) This specifies the initial version for a branch based module. It can be used if `vcs_repo.branch` is set. If it is omitted, the initial modules version will default to `0.0.0`.
+
+The `test_config` block supports
+* `tests_enabled` - (Optional) Specifies whether tests run for the registry module. Tests are only supported for branch-based publishing.
 
 The `vcs_repo` block supports:
 
 * `display_identifier` - (Required) The display identifier for your VCS repository.
-  For most VCS providers outside of BitBucket Cloud, this will match the `identifier`
+  For most VCS providers outside of BitBucket Cloud and Azure DevOps, this will match the `identifier`
   string.
 * `identifier` - (Required) A reference to your VCS repository in the format
-  `<organization>/<repository>` where `<organization>` and `<repository>` refer to the organization (or project key, for Bitbucket Server)
-  and repository in your VCS provider. The format for Azure DevOps is <organization>/<project>/\_git/<repository>.
+  `<organization>/<repository>` where `<organization>` and `<repository>` refer to the organization (or project key, for Bitbucket Data Center)
+  and repository in your VCS provider. The format for Azure DevOps is `<ado organization>/<ado project>/_git/<ado repository>`.
 * `oauth_token_id` - (Optional) Token ID of the VCS Connection (OAuth Connection Token) to use. This conflicts with `github_app_installation_id` and can only be used if `github_app_installation_id` is not used.
 * `github_app_installation_id` - (Optional) The installation id of the Github App. This conflicts with `oauth_token_id` and can only be used if `oauth_token_id` is not used.
+* `branch` - (Optional) The git branch used for publishing when using branch-based publishing for the registry module. When a `branch` is set, `tags` will be returned as `false`.
+* `tags` - (Optional) Specifies whether tag based publishing is enabled for the registry module. When `tags` is set to `true`, the `branch` must be set to an empty value.
 
 ## Attributes Reference
 
@@ -143,6 +179,7 @@ The `vcs_repo` block supports:
 * `name` - The name of registry module.
 * `organization` - The name of the organization associated with the registry module.
 * `namespace` - The namespace of the module. For private modules this is the name of the organization that owns the module.
+* `publishing_mechanism` - The publishing mechanism used when releasing new versions of the module.
 * `registry_name` - The registry name of the registry module depicting whether the registry module is private or public.
 * `no_code` - **Deprecated** The property that will enable or disable a module as no-code provisioning ready.
 Use the tfe_no_code_module resource instead.

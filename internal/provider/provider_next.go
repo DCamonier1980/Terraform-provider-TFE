@@ -5,7 +5,9 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"regexp"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -22,6 +24,14 @@ type frameworkProvider struct{}
 
 // Compile-time interface check
 var _ provider.Provider = &frameworkProvider{}
+
+// Can be used to construct ID regexp patterns
+var base58Alphabet = "[1-9A-HJ-NP-Za-km-z]"
+
+// IDPattern constructs a regexp pattern for HCP Terraform with the given prefix
+func IDPattern(prefix string) *regexp.Regexp {
+	return regexp.MustCompile(fmt.Sprintf("^%s-%s{16}$", prefix, base58Alphabet))
+}
 
 // FrameworkProviderConfig is a helper type for extracting the provider
 // configuration from the provider block.
@@ -71,7 +81,7 @@ func (p *frameworkProvider) Schema(_ context.Context, _ provider.SchemaRequest, 
 	}
 }
 
-// Configure (a Provider interface function) sets up the TFC client per the
+// Configure (a Provider interface function) sets up the HCP Terraform client per the
 // specified provider configuration block and env vars.
 func (p *frameworkProvider) Configure(ctx context.Context, req provider.ConfigureRequest, res *provider.ConfigureResponse) {
 	var data FrameworkProviderConfig
@@ -95,7 +105,7 @@ func (p *frameworkProvider) Configure(ctx context.Context, req provider.Configur
 		data.Organization = types.StringValue(os.Getenv("TFE_ORGANIZATION"))
 	}
 
-	client, err := client.GetClient(data.Hostname.ValueString(), data.Token.ValueString(), data.SSLSkipVerify.ValueBool())
+	tfeClient, err := client.GetClient(data.Hostname.ValueString(), data.Token.ValueString(), data.SSLSkipVerify.ValueBool())
 
 	if err != nil {
 		res.Diagnostics.AddError("Failed to initialize HTTP client", err.Error())
@@ -103,7 +113,7 @@ func (p *frameworkProvider) Configure(ctx context.Context, req provider.Configur
 	}
 
 	configuredClient := ConfiguredClient{
-		Client:       client,
+		Client:       tfeClient,
 		Organization: data.Organization.ValueString(),
 	}
 
@@ -113,13 +123,29 @@ func (p *frameworkProvider) Configure(ctx context.Context, req provider.Configur
 
 func (p *frameworkProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
+		NewNoCodeModuleDataSource,
+		NewOrganizationRunTaskDataSource,
+		NewOrganizationRunTaskGlobalSettingsDataSource,
+		NewRegistryGPGKeyDataSource,
+		NewRegistryGPGKeysDataSource,
+		NewRegistryProviderDataSource,
+		NewRegistryProvidersDataSource,
 		NewSAMLSettingsDataSource,
+		NewWorkspaceRunTaskDataSource,
 	}
 }
 
 func (p *frameworkProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
+		NewOrganizationRunTaskGlobalSettingsResource,
+		NewOrganizationRunTaskResource,
+		NewRegistryGPGKeyResource,
+		NewRegistryProviderResource,
 		NewResourceVariable,
+		NewDataRetentionPolicyResource,
+		NewResourceWorkspaceSettings,
 		NewSAMLSettingsResource,
+		NewTestVariableResource,
+		NewWorkspaceRunTaskResource,
 	}
 }

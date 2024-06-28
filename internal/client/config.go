@@ -117,26 +117,27 @@ func locateConfigFile() string {
 	return filePath
 }
 
+// All the errors returned by the helper methods called in this function get ignored (down the road we throw an error when all auth methods have failed.) We only use these errors to log warnings to the user.
 func readCliConfigFile(configFilePath string) CLIHostConfig {
 	config := CLIHostConfig{}
 
 	// Read the CLI config file content.
 	content, err := os.ReadFile(configFilePath)
 	if err != nil {
-		log.Printf("[ERROR] Error reading CLI config or credentials file %s: %v", configFilePath, err)
+		log.Printf("[WARN] Unable to read CLI config or credentials file %s: %v", configFilePath, err)
 		return config
 	}
 
 	// Parse the CLI config file content.
 	obj, err := hcl.Parse(string(content))
 	if err != nil {
-		log.Printf("[ERROR] Error parsing CLI config or credentials file %s: %v", configFilePath, err)
+		log.Printf("[WARN] Unable to parse CLI config or credentials file %s: %v", configFilePath, err)
 		return config
 	}
 
 	// Decode the CLI config file content.
 	if err := hcl.DecodeObject(&config, obj); err != nil {
-		log.Printf("[ERROR] Error decoding CLI config or credentials file %s: %v", configFilePath, err)
+		log.Printf("[WARN] Unable to decode CLI config or credentials file %s: %v", configFilePath, err)
 	}
 
 	return config
@@ -184,7 +185,7 @@ func configure(tfeHost, token string, insecure bool) (*ClientConfiguration, erro
 		v := os.Getenv("TFE_SSL_SKIP_VERIFY")
 		insecure, err = strconv.ParseBool(v)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("TFE_SSL_SKIP_VERIFY has unrecognized value %q", v)
 		}
 	}
 
@@ -196,7 +197,7 @@ func configure(tfeHost, token string, insecure bool) (*ClientConfiguration, erro
 	// Parse the hostname for comparison,
 	hostname, err := svchost.ForComparison(tfeHost)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid hostname %q: %w", tfeHost, err)
 	}
 
 	httpClient := tfe.DefaultConfig().HTTPClient

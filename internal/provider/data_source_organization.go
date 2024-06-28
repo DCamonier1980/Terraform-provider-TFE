@@ -1,6 +1,11 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
 
+// NOTE: This is a legacy resource and should be migrated to the Plugin
+// Framework if substantial modifications are planned. See
+// docs/new-resources.md if planning to use this code as boilerplate for
+// a new resource.
+
 package provider
 
 import (
@@ -18,7 +23,7 @@ func dataSourceTFEOrganization() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 			},
 
 			"external_id": {
@@ -61,6 +66,11 @@ func dataSourceTFEOrganization() *schema.Resource {
 				Computed: true,
 			},
 
+			"aggregated_commit_status_enabled": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
+
 			"assessments_enforced": {
 				Type:     schema.TypeBool,
 				Computed: true,
@@ -88,6 +98,7 @@ func dataSourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) err
 
 	log.Printf("[DEBUG] Setting Organization Attributes")
 	d.SetId(org.ExternalID)
+	d.Set("name", org.Name)
 	d.Set("external_id", org.ExternalID)
 	d.Set("collaborator_auth_policy", org.CollaboratorAuthPolicy)
 	d.Set("cost_estimation_enabled", org.CostEstimationEnabled)
@@ -100,6 +111,7 @@ func dataSourceTFEOrganizationRead(d *schema.ResourceData, meta interface{}) err
 	d.Set("owners_team_saml_role_id", org.OwnersTeamSAMLRoleID)
 	d.Set("two_factor_conformant", org.TwoFactorConformant)
 	d.Set("send_passing_statuses_for_untriggered_speculative_plans", org.SendPassingStatusesForUntriggeredSpeculativePlans)
+	d.Set("aggregated_commit_status_enabled", org.AggregatedCommitStatusEnabled)
 	d.Set("assessments_enforced", org.AssessmentsEnforced)
 
 	return nil

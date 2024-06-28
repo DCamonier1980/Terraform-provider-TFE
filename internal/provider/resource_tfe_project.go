@@ -1,6 +1,11 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
 
+// NOTE: This is a legacy resource and should be migrated to the Plugin
+// Framework if substantial modifications are planned. See
+// docs/new-resources.md if planning to use this code as boilerplate for
+// a new resource.
+
 package provider
 
 import (
@@ -13,6 +18,7 @@ import (
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 var projectIDRegexp = regexp.MustCompile("^prj-[a-zA-Z0-9]{16}$")
@@ -27,10 +33,22 @@ func resourceTFEProject() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 
+		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
+
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
+				ValidateFunc: validation.All(
+					validation.StringLenBetween(3, 40),
+					validation.StringMatch(regexp.MustCompile(`\A[\w\-][\w\- ]+[\w\-]\z`),
+						"can only include letters, numbers, spaces, -, and _."),
+				),
+			},
+
+			"description": {
+				Type:     schema.TypeString,
+				Optional: true,
 			},
 
 			"organization": {
@@ -53,7 +71,8 @@ func resourceTFEProjectCreate(ctx context.Context, d *schema.ResourceData, meta 
 	name := d.Get("name").(string)
 
 	options := tfe.ProjectCreateOptions{
-		Name: name,
+		Name:        name,
+		Description: tfe.String(d.Get("description").(string)),
 	}
 
 	log.Printf("[DEBUG] Create new project: %s", name)
@@ -82,6 +101,7 @@ func resourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	d.Set("name", project.Name)
+	d.Set("description", project.Description)
 	d.Set("organization", project.Organization.Name)
 
 	return nil
@@ -91,7 +111,8 @@ func resourceTFEProjectUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	config := meta.(ConfiguredClient)
 
 	options := tfe.ProjectUpdateOptions{
-		Name: tfe.String(d.Get("name").(string)),
+		Name:        tfe.String(d.Get("name").(string)),
+		Description: tfe.String(d.Get("description").(string)),
 	}
 
 	log.Printf("[DEBUG] Update configuration of project: %s", d.Id())

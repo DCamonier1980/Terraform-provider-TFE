@@ -45,6 +45,39 @@ func TestAccTFEOAuthClient_basic(t *testing.T) {
 	})
 }
 
+func TestAccTFEOAuthClientWithOrganizationScoped_basic(t *testing.T) {
+	oc := &tfe.OAuthClient{}
+	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			if envGithubToken == "" {
+				t.Skip("Please set GITHUB_TOKEN to run this test")
+			}
+		},
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEOAuthClientDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOAuthClient_basic(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOAuthClientExists("tfe_oauth_client.foobar", oc),
+					testAccCheckTFEOAuthClientAttributes(oc),
+					resource.TestCheckResourceAttr(
+						"tfe_oauth_client.foobar", "api_url", "https://api.github.com"),
+					resource.TestCheckResourceAttr(
+						"tfe_oauth_client.foobar", "http_url", "https://github.com"),
+					resource.TestCheckResourceAttr(
+						"tfe_oauth_client.foobar", "service_provider", "github"),
+					resource.TestCheckResourceAttr(
+						"tfe_oauth_client.foobar", "organization_scoped", "true"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccTFEOAuthClient_rsaKeys(t *testing.T) {
 	oc := &tfe.OAuthClient{}
 	rInt := rand.New(rand.NewSource(time.Now().UnixNano())).Int()
@@ -60,15 +93,41 @@ func TestAccTFEOAuthClient_rsaKeys(t *testing.T) {
 					testAccCheckTFEOAuthClientExists("tfe_oauth_client.foobar", oc),
 					testAccCheckTFEOAuthClientAttributes(oc),
 					resource.TestCheckResourceAttr(
-						"tfe_oauth_client.foobar", "api_url", "https://bbs.example.com"),
+						"tfe_oauth_client.foobar", "api_url", "https://bbdc.example.com"),
 					resource.TestCheckResourceAttr(
-						"tfe_oauth_client.foobar", "http_url", "https://bbs.example.com"),
+						"tfe_oauth_client.foobar", "http_url", "https://bbdc.example.com"),
 					resource.TestCheckResourceAttr(
-						"tfe_oauth_client.foobar", "service_provider", "bitbucket_server"),
+						"tfe_oauth_client.foobar", "service_provider", "bitbucket_data_center"),
 					resource.TestCheckResourceAttr(
 						"tfe_oauth_client.foobar", "key", "1e4843e138b0d44911a50d15e0f7cee4"),
 					resource.TestCheckResourceAttr(
 						"tfe_oauth_client.foobar", "rsa_public_key", "-----BEGIN PUBLIC KEY-----\nVGm9w0J8t6gWe745gW6E9NHJGiDKehh58bAtjO0wPvFg5l8Ea9s+PpAvP4wCZWDS\nhwIDAQAB\n-----END PUBLIC KEY-----\n"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccTFEOAuthClient_agentPool(t *testing.T) {
+	skipUnlessBeta(t)
+	oc := &tfe.OAuthClient{}
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			if envGithubToken == "" {
+				t.Skip("Please set GITHUB_TOKEN to run this test")
+			}
+		},
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckTFEOAuthClientDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTFEOAuthClient_agentPool(),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckTFEOAuthClientExists("tfe_oauth_client.foobar", oc),
+					testAccCheckTFEOAuthClientAttributes(oc),
+					resource.TestCheckResourceAttr(
+						"tfe_oauth_client.foobar", "service_provider", "github_enterprise"),
 				),
 			},
 		},
@@ -153,6 +212,7 @@ resource "tfe_oauth_client" "foobar" {
   http_url         = "https://github.com"
   oauth_token      = "%s"
   service_provider = "github"
+  organization_scoped = true
 }`, rInt, envGithubToken)
 }
 
@@ -166,9 +226,9 @@ resource "tfe_organization" "foobar" {
 resource "tfe_oauth_client" "foobar" {
   organization     = tfe_organization.foobar.id
 	name 						 = "foobar_oauth"
-  api_url          = "https://bbs.example.com"
-  http_url         = "https://bbs.example.com"
-  service_provider = "bitbucket_server"
+  api_url          = "https://bbdc.example.com"
+  http_url         = "https://bbdc.example.com"
+  service_provider = "bitbucket_data_center"
   key       			 = "1e4843e138b0d44911a50d15e0f7cee4"
   secret           = <<EOT
 -----BEGIN RSA PRIVATE KEY-----
@@ -182,4 +242,25 @@ hwIDAQAB
 -----END PUBLIC KEY-----
 EOT
 }`, rInt)
+}
+
+func testAccTFEOAuthClient_agentPool() string {
+	return fmt.Sprintf(`
+data "tfe_organization" "foobar" {
+  name  = "xxx"
+}
+
+data "tfe_agent_pool" "foobar" {
+  name = "xxx"
+  organization = data.tfe_organization.foobar.name
+}
+
+resource "tfe_oauth_client" "foobar" {
+  organization     = data.tfe_organization.foobar.name
+  api_url          = "https://githubenterprise.xxx/api/v3"
+  http_url         = "https://githubenterprise.xxx"
+  oauth_token      = "%s"
+  service_provider = "github_enterprise"
+  agent_pool_id    = data.tfe_agent_pool.foobar.id
+}`, envGithubToken)
 }

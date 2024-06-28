@@ -1,6 +1,11 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
 
+// NOTE: This is a legacy resource and should be migrated to the Plugin
+// Framework if substantial modifications are planned. See
+// docs/new-resources.md if planning to use this code as boilerplate for
+// a new resource.
+
 package provider
 
 import (
@@ -24,6 +29,8 @@ func resourceTFESentinelPolicy() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: resourceTFESentinelPolicyImporter,
 		},
+
+		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -129,6 +136,7 @@ func resourceTFESentinelPolicyRead(d *schema.ResourceData, meta interface{}) err
 	d.Set("name", policy.Name)
 	d.Set("description", policy.Description)
 
+	//nolint:staticcheck // this is still used by TFE versions older than 202306-1
 	if len(policy.Enforce) == 1 {
 		d.Set("enforce_mode", string(policy.Enforce[0].Mode))
 	}
@@ -154,6 +162,7 @@ func resourceTFESentinelPolicyUpdate(d *schema.ResourceData, meta interface{}) e
 		}
 
 		if d.HasChange("enforce_mode") {
+			//nolint:staticcheck // this is still used by TFE versions older than 202306-1
 			options.Enforce = []*tfe.EnforcementOptions{
 				{
 					Path: tfe.String(d.Get("name").(string) + ".sentinel"),

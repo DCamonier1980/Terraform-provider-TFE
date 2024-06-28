@@ -1,8 +1,10 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
 
-// Read context to implement cancellation
-//
+// NOTE: This is a legacy resource and should be migrated to the Plugin
+// Framework if substantial modifications are planned. See
+// docs/new-resources.md if planning to use this code as boilerplate for
+// a new resource.
 
 package provider
 
@@ -24,6 +26,11 @@ func dataSourceTFEProject() *schema.Resource {
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
+			},
+
+			"description": {
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 
 			"organization": {
@@ -90,6 +97,7 @@ func dataSourceTFEProjectRead(ctx context.Context, d *schema.ResourceData, meta 
 			}
 
 			d.Set("workspace_ids", workspaces)
+			d.Set("description", proj.Description)
 			d.SetId(proj.ID)
 			return nil
 		}

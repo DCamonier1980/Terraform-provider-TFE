@@ -1,6 +1,11 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
 
+// NOTE: This is a legacy resource and should be migrated to the Plugin
+// Framework if substantial modifications are planned. See
+// docs/new-resources.md if planning to use this code as boilerplate for
+// a new resource.
+
 package provider
 
 import (
@@ -25,6 +30,8 @@ func resourceTFEPolicy() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: resourceTFEPolicyImporter,
 		},
+
+		CustomizeDiff: customizeDiffIfProviderDefaultOrganizationChanged,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -187,7 +194,7 @@ func createOPAPolicyOptions(options *tfe.PolicyCreateOptions, d *schema.Resource
 		enforceOpts.Mode = tfe.EnforcementMode(tfe.EnforcementLevel(v.(string)))
 	}
 
-	options.Enforce = []*tfe.EnforcementOptions{enforceOpts}
+	options.Enforce = []*tfe.EnforcementOptions{enforceOpts} //nolint:staticcheck // this is still used by TFE versions older than 202306-1
 
 	vQuery, ok := d.GetOk("query")
 	if !ok {
@@ -211,7 +218,7 @@ func createSentinelPolicyOptions(options *tfe.PolicyCreateOptions, d *schema.Res
 		enforceOpts.Mode = tfe.EnforcementMode(tfe.EnforcementLevel(v.(string)))
 	}
 
-	options.Enforce = []*tfe.EnforcementOptions{enforceOpts}
+	options.Enforce = []*tfe.EnforcementOptions{enforceOpts} //nolint:staticcheck // this is still used by TFE versions older than 202306-1
 	return options
 }
 
@@ -247,6 +254,7 @@ func resourceTFEPolicyRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("description", policy.Description)
 	d.Set("kind", policy.Kind)
 
+	//nolint:staticcheck // this is still used by TFE versions older than 202306-1
 	if len(policy.Enforce) == 1 {
 		d.Set("enforce_mode", string(policy.Enforce[0].Mode))
 	}
@@ -264,7 +272,7 @@ func resourceTFEPolicyUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(ConfiguredClient)
 
 	// nolint:nestif
-	if d.HasChange("description") || d.HasChange("enforce_mode") {
+	if d.HasChange("description") || d.HasChange("enforce_mode") || d.HasChange("query") {
 		// Create a new options struct.
 		options := tfe.PolicyUpdateOptions{}
 
@@ -280,12 +288,17 @@ func resourceTFEPolicyUpdate(d *schema.ResourceData, meta interface{}) error {
 			}
 		}
 		if d.HasChange("enforce_mode") {
+			//nolint:staticcheck // this is still used by TFE versions older than 202306-1
 			options.Enforce = []*tfe.EnforcementOptions{
 				{
 					Path: tfe.String(path),
 					Mode: tfe.EnforcementMode(tfe.EnforcementLevel(d.Get("enforce_mode").(string))),
 				},
 			}
+		}
+
+		if query, ok := d.GetOk("query"); ok {
+			options.Query = tfe.String(query.(string))
 		}
 
 		log.Printf("[DEBUG] Update configuration for %s policy: %s", vKind, d.Id())

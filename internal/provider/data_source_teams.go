@@ -1,6 +1,11 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
 
+// NOTE: This is a legacy resource and should be migrated to the Plugin
+// Framework if substantial modifications are planned. See
+// docs/new-resources.md if planning to use this code as boilerplate for
+// a new resource.
+
 package provider
 
 import (
@@ -47,31 +52,33 @@ func dataSourceTFETeamsRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if len(teams.Items) == 0 {
-		return fmt.Errorf("Could not find teams in  %s", organization)
-	} else {
-		options := &tfe.TeamListOptions{}
-		names := []string{}
-		ids := map[string]string{}
-		for {
-			for _, team := range teams.Items {
-				names = append(names, team.Name)
-				ids[team.Name] = team.ID
-			}
-
-			if teams.CurrentPage >= teams.TotalPages {
-				break
-			}
-
-			options.PageNumber = teams.NextPage
-
-			teams, err = config.Client.Teams.List(ctx, organization, options)
-			if err != nil {
-				return fmt.Errorf("Error retrieving teams: %w", err)
-			}
-		}
-		d.SetId(organization)
-		d.Set("names", names)
-		d.Set("ids", ids)
+		return fmt.Errorf("could not find teams in %q", organization)
 	}
+
+	options := &tfe.TeamListOptions{}
+	names := []string{}
+	ids := map[string]string{}
+	for {
+		for _, team := range teams.Items {
+			names = append(names, team.Name)
+			ids[team.Name] = team.ID
+		}
+
+		if teams.CurrentPage >= teams.TotalPages {
+			break
+		}
+
+		options.PageNumber = teams.NextPage
+
+		teams, err = config.Client.Teams.List(ctx, organization, options)
+		if err != nil {
+			return fmt.Errorf("Error retrieving teams: %w", err)
+		}
+	}
+
+	d.SetId(organization)
+	d.Set("names", names)
+	d.Set("ids", ids)
+
 	return nil
 }

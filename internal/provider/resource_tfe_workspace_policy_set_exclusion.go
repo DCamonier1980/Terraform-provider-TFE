@@ -1,6 +1,11 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
 
+// NOTE: This is a legacy resource and should be migrated to the Plugin
+// Framework if substantial modifications are planned. See
+// docs/new-resources.md if planning to use this code as boilerplate for
+// a new resource.
+
 package provider
 
 import (
@@ -66,9 +71,7 @@ func resourceTFEWorkspacePolicySetExclusionRead(d *schema.ResourceData, meta int
 	workspaceExclusionsID := d.Get("workspace_id").(string)
 
 	log.Printf("[DEBUG] Read configuration of excluded workspace policy set: %s", policySetID)
-	policySet, err := config.Client.PolicySets.ReadWithOptions(ctx, policySetID, &tfe.PolicySetReadOptions{
-		Include: []tfe.PolicySetIncludeOpt{tfe.PolicySetWorkspaceExclusions},
-	})
+	policySet, err := config.Client.PolicySets.Read(ctx, policySetID)
 	if err != nil {
 		if errors.Is(err, tfe.ErrResourceNotFound) {
 			log.Printf("[DEBUG] Policy set %s no longer exists", policySetID)
