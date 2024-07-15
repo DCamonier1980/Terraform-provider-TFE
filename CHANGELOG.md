@@ -6,8 +6,6 @@ BUG FIXES:
 
 ENHANCEMENTS:
 
-* `r/tfe_registry_module`: Documented required tokens
-
 DEPRECATIONS:
 
 ## v0.46.0 (July 3, 2023)
